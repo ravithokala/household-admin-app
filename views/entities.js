@@ -30,7 +30,8 @@ export function entitiesScreen(main) {
           el('button', { class: 'row', type: 'button', onclick: () => entitySheet(e, type) },
             el('div', { class: 'row-main' },
               el('div', { class: 'row-title' }, e.name),
-              el('div', { class: 'row-sub' }, [e.reg, [e.make, e.model].filter(Boolean).join(' '), e.address, e.is_rental ? 'Rental' : ''].filter(Boolean).join(' · ')),
+              el('div', { class: 'row-sub' }, [e.reg, [e.make, e.model].filter(Boolean).join(' '), e.address, e.is_rental ? 'Rental' : '',
+                e.calendar_code ? `Calendar: ${e.calendar_code}` : ''].filter(Boolean).join(' · ')),
               el('div', { class: 'row-when' }, `${count(e.entity_id)} item(s)`)))))));
     }));
 }
@@ -43,6 +44,7 @@ export function entitiesScreen(main) {
  */
 export function entitySheet(entity, type, onSaved) {
   const name = input('text', entity?.name ?? null, { maxlength: 80, placeholder: type === 'vehicle' ? 'e.g. Family car (optional)' : '' });
+  const code = input('text', entity?.calendar_code ?? null, { maxlength: 4, autocapitalize: 'characters', autocomplete: 'off', placeholder: 'e.g. C' });
   const reg = input('text', entity?.reg ?? null, { maxlength: 10, autocapitalize: 'characters', autocomplete: 'off' });
   const make = input('text', entity?.make ?? null, { maxlength: 80 });
   const model = input('text', entity?.model ?? null, { maxlength: 80 });
@@ -53,7 +55,7 @@ export function entitySheet(entity, type, onSaved) {
 
   const save = saveButton(entity ? 'Save' : 'Add', async () => {
     const id = entity?.entity_id ?? crypto.randomUUID();
-    const r = await saveEntity(id, { entity_type: type, name: name.get(), reg: reg.get(), make: make.get(), model: model.get(), address: address.get(), is_rental: rental.get() });
+    const r = await saveEntity(id, { entity_type: type, name: name.get(), reg: reg.get(), make: make.get(), model: model.get(), address: address.get(), is_rental: rental.get(), calendar_code: code.get() });
     if (!r.ok) { showErrors(messages, r.errors); return; }
     sheet.close();
     toast(entity ? 'Saved.' : `Added ${r.rows.entities[0].name}.`);
@@ -69,7 +71,8 @@ export function entitySheet(entity, type, onSaved) {
   const sheet = openSheet(entity ? `Edit ${entity.name}` : `Add a ${label}`, el('div', { class: 'form' },
     type === 'vehicle' ? [field('Registration', reg.node), field('Name', name.node), el('div', { class: 'row2' }, field('Make', make.node), field('Model', model.node))] : '',
     type === 'property' ? [field('Name', name.node), field('Address', address.node), rental.node] : '',
-    type === 'person' ? field('Name', name.node) : '',
+    type === 'person' ? [field('Name', name.node), field('Code in the family calendar (optional)', code.node),
+      el('p', { class: 'muted small' }, 'The letter the family calendar uses for this person, e.g. C. Their items shown on the calendar are marked with it.')] : '',
     messages,
     el('div', { class: 'actions' }, remove, save)));
 }

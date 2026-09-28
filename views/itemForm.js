@@ -5,9 +5,9 @@ import { Templates } from '../shared/templates.js';
 import { Model } from '../shared/model.js';
 import { Dates } from '../shared/dates.js';
 import { Renewals } from '../shared/renewals.js';
-import { data, saveItem } from '../store/store.js';
+import { data, status, saveItem } from '../store/store.js';
 import { openSheet, toast } from './sheet.js';
-import { field, input, select, textarea, money, saveButton, showErrors } from './fields.js';
+import { field, input, select, textarea, money, checkbox, chips, saveButton, showErrors } from './fields.js';
 import { entitySheet } from './entities.js';
 
 /**
@@ -87,6 +87,16 @@ export function itemSheet(item, template = null) {
   showEvery();
   const rollFrom = select(start.roll_from, [['due', 'The old due date (keeps the anniversary)'], ['done', 'The day it was done']]);
 
+  // Family Calendar (ADR-013): a read-only reminder there, from act-by to the due date; whose job, RT by default.
+  const onCalendar = checkbox(start.on_calendar, 'Show on the family calendar');
+  const defaultOwner = status.users.includes('RT') ? ['RT'] : status.users.slice(0, 1);
+  const owners = chips(status.users, start.owners.length ? start.owners : defaultOwner);
+  const ownersField = field('Whose job on the calendar', owners.node);
+  const calendarHint = el('p', { class: 'muted small' }, 'Appears in the family calendar from the act-by date until it is renewed here. Change it here, not in the calendar.');
+  const showOwners = () => { ownersField.hidden = !onCalendar.get(); calendarHint.hidden = !onCalendar.get(); };
+  onCalendar.box.addEventListener('change', showOwners);
+  showOwners();
+
   const provider = input('text', start.provider, { maxlength: 120 });
   const reference = input('text', start.reference, { maxlength: 80, autocomplete: 'off' });
   const cost = money(start.cost_pence);
@@ -113,6 +123,7 @@ export function itemSheet(item, template = null) {
       provider: provider.get(), reference: reference.get(), cost_pence: cost.get(), notes: notes.get(),
       attachments: refFields.map((f) => ({ label: f.label.get(), location: f.location.get() })).filter((a) => a.label || a.location),
       archived: start.archived,
+      on_calendar: onCalendar.get(), owners: owners.get(),
     });
     if (!r.ok) { showErrors(messages, r.errors); return; }
     sheet.close();
@@ -129,6 +140,9 @@ export function itemSheet(item, template = null) {
     actBy,
     el('div', { class: 'row2' }, field('Repeats', unit.node), everyField),
     field('Next due date counts from', rollFrom.node),
+    onCalendar.node,
+    ownersField,
+    calendarHint,
     el('details', { class: 'more-fields', open: Boolean(start.provider || start.reference || start.cost_pence !== null || start.notes || start.attachments.length) },
       el('summary', {}, 'Provider, reference, cost and notes'),
       field('Provider', provider.node),

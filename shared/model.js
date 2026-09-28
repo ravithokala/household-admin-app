@@ -13,13 +13,13 @@
 const Model = (() => {
   const ITEM_FIELDS = Object.freeze(['item_id', 'title', 'category', 'template_id', 'entity_type', 'entity_id', 'due_date',
     'lead_time_days', 'recurrence_unit', 'recurrence_every', 'roll_from', 'owners', 'provider', 'reference', 'cost_pence',
-    'notes', 'attachments', 'archived', 'deleted', 'version', 'updated_at', 'updated_by', 'is_sample']);
+    'notes', 'attachments', 'archived', 'deleted', 'version', 'updated_at', 'updated_by', 'is_sample', 'on_calendar']);
 
   const HISTORY_FIELDS = Object.freeze(['history_id', 'item_id', 'renewed_on', 'previous_due_date', 'new_due_date', 'provider',
     'cost_pence', 'quotes', 'notes', 'version', 'updated_at', 'updated_by', 'is_sample']);
 
   const ENTITY_FIELDS = Object.freeze(['entity_id', 'entity_type', 'name', 'reg', 'make', 'model', 'address', 'is_rental',
-    'deleted', 'version', 'updated_at', 'updated_by', 'is_sample']);
+    'deleted', 'version', 'updated_at', 'updated_by', 'is_sample', 'calendar_code']);
 
   /** The write log: one row per write from the app, so a resent offline write is applied once. */
   const OP_FIELDS = Object.freeze(['op_id', 'at', 'user', 'type', 'target_id', 'result']);
@@ -39,13 +39,13 @@ const Model = (() => {
     item_id: '', title: '', category: 'other', template_id: null, entity_type: 'household', entity_id: null, due_date: '',
     lead_time_days: 30, recurrence_unit: 'year', recurrence_every: 1, roll_from: 'due', owners: [], provider: null,
     reference: null, cost_pence: null, notes: null, attachments: [], archived: false, deleted: false, version: 0,
-    updated_at: null, updated_by: null, is_sample: false,
+    updated_at: null, updated_by: null, is_sample: false, on_calendar: false,
   });
 
   /** @returns {Entity} */
   const blankEntity = () => ({
     entity_id: '', entity_type: 'person', name: '', reg: null, make: null, model: null, address: null, is_rental: false,
-    deleted: false, version: 0, updated_at: null, updated_by: null, is_sample: false,
+    deleted: false, version: 0, updated_at: null, updated_by: null, is_sample: false, calendar_code: null,
   });
 
   /**

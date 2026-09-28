@@ -24,8 +24,11 @@ const Validation = (() => {
 
   /** Fields the app may change on an item; the server sets the rest. */
   const ITEM_INPUT = Object.freeze(['title', 'category', 'template_id', 'entity_type', 'entity_id', 'due_date', 'lead_time_days',
-    'recurrence_unit', 'recurrence_every', 'roll_from', 'owners', 'provider', 'reference', 'cost_pence', 'notes', 'attachments', 'archived']);
-  const ENTITY_INPUT = Object.freeze(['entity_type', 'name', 'reg', 'make', 'model', 'address', 'is_rental']);
+    'recurrence_unit', 'recurrence_every', 'roll_from', 'owners', 'provider', 'reference', 'cost_pence', 'notes', 'attachments', 'archived',
+    'on_calendar']);
+  const ENTITY_INPUT = Object.freeze(['entity_type', 'name', 'reg', 'make', 'model', 'address', 'is_rental', 'calendar_code']);
+  /** A Family Calendar participant code, e.g. C, RT (ADR-013). */
+  const CALENDAR_CODE = /^[A-Z][A-Z0-9]{0,3}$/;
 
   /** @param {unknown} value */
   const isId = (value) => typeof value === 'string' && ID.test(value);
@@ -116,9 +119,13 @@ const Validation = (() => {
     const rollFrom = /** @type {RollFrom} */ (input.roll_from ?? 'due');
     if (!Model.ROLL_FROM.includes(rollFrom)) c.add('roll_from', 'INVALID', 'must be due or done');
 
-    const owners = Array.isArray(input.owners) ? [...new Set(input.owners.map(String))] : [];
-    if (input.owners !== undefined && !Array.isArray(input.owners)) c.add('owners', 'INVALID', 'must be a list');
+    // Owners mean "whose job on the Family Calendar", so they exist only for items shown there (ADR-013).
+    const onCalendar = input.on_calendar === true;
+    let owners = Array.isArray(input.owners) ? [...new Set(input.owners.map(String))] : [];
+    if (input.owners !== undefined && input.owners !== null && !Array.isArray(input.owners)) c.add('owners', 'INVALID', 'must be a list');
+    if (!onCalendar) owners = [];
     owners.filter((o) => !known.users.includes(o)).forEach((o) => c.add('owners', 'INVALID', `${o} is not an app user`));
+    if (onCalendar && owners.length === 0) c.add('owners', 'REQUIRED', 'choose whose job it is on the family calendar');
 
     const cost = c.int('cost_pence', input.cost_pence, 0, MAX_PENCE);
 
@@ -155,6 +162,7 @@ const Validation = (() => {
       notes: c.text('notes', input.notes, LIMITS.notes),
       attachments,
       archived: input.archived === true,
+      on_calendar: onCalendar,
     };
     return { value, errors: c.errors };
   }
@@ -176,6 +184,9 @@ const Validation = (() => {
     let name = c.text('name', input.name, LIMITS.name);
     if (!name && type === 'vehicle' && reg) name = reg;
     if (!name) c.add('name', 'REQUIRED', 'is required');
+    let code = c.text('calendar_code', input.calendar_code, 4);
+    if (code) code = code.toUpperCase();
+    if (type === 'person' && code && code.length <= 4 && !CALENDAR_CODE.test(code)) c.add('calendar_code', 'INVALID', 'must be 1 to 4 letters or digits starting with a letter, e.g. C or RT');
     const value = {
       entity_type: type,
       name: name ?? '',
@@ -184,6 +195,7 @@ const Validation = (() => {
       model: type === 'vehicle' ? c.text('model', input.model, LIMITS.name) : null,
       address: type === 'property' ? c.text('address', input.address, LIMITS.address) : null,
       is_rental: type === 'property' && input.is_rental === true,
+      calendar_code: type === 'person' ? code : null,
     };
     return { value, errors: c.errors };
   }
