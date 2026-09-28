@@ -40,7 +40,7 @@ function show() {
   const main = $('main');
   const active = document.activeElement;
   const searching = active instanceof HTMLInputElement && active.classList.contains('search-input') ? active.selectionStart : null;
-  if (screen === 'home') dashboard(main, show);
+  if (screen === 'home') dashboard(main);
   else if (screen === 'all') list(main);
   else if (screen === 'item') itemDetail(main, arg);
   else if (screen === 'entities') entitiesScreen(main);

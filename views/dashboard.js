@@ -2,27 +2,17 @@
 
 import { el, today } from '../dom.js';
 import { Renewals } from '../shared/renewals.js';
-import { data, status, bulk } from '../store/store.js';
+import { data, bulk } from '../store/store.js';
 import { itemRow, empty } from './parts.js';
 import { toast } from './sheet.js';
 
-const WHO_KEY = 'ha.who';
-
-/** 'mine' or 'all', remembered on this phone. */
-function whoFilter() {
-  try { return localStorage.getItem(WHO_KEY) === 'mine' ? 'mine' : 'all'; } catch (e) { return 'all'; }
-}
-
 /**
  * Home: only what needs attention, by act-by date. Everything overdue, and whatever must be
- * acted on in the next 60 days, grouped red / amber / green.
+ * acted on in the next 60 days, grouped red / amber / green. Everyone's items (RT, 2026-09-28).
  * @param {HTMLElement} main
- * @param {() => void} redraw
  */
-export function dashboard(main, redraw) {
-  const who = whoFilter();
-  const live = Object.values(data.items).filter((i) => !i.deleted
-    && (who === 'all' || i.owners.length === 0 || i.owners.includes(status.user)));
+export function dashboard(main) {
+  const live = Object.values(data.items).filter((i) => !i.deleted);
   const groups = Renewals.attention(live, today());
   const total = groups.overdue.length + groups.actSoon.length + groups.sorted.length;
 
@@ -35,18 +25,9 @@ export function dashboard(main, redraw) {
     el('p', { class: 'hint' }, hint),
     el('ul', { class: 'rows' }, items.map(itemRow)));
 
-  const setWho = (/** @type {string} */ value) => () => {
-    try { localStorage.setItem(WHO_KEY, value); } catch (e) { /* not remembered */ }
-    redraw();
-  };
-
   const noItems = Object.values(data.items).every((i) => i.deleted);
   main.replaceChildren(
-    el('div', { class: 'toolbar' },
-      el('h1', { class: 'screen-title' }, 'Needs attention'),
-      status.users.length > 1 ? el('div', { class: 'segmented', role: 'group', 'aria-label': 'Whose items' },
-        el('button', { type: 'button', 'aria-pressed': String(who === 'mine'), onclick: setWho('mine') }, 'Mine'),
-        el('button', { type: 'button', 'aria-pressed': String(who === 'all'), onclick: setWho('all') }, 'Everyone')) : ''),
+    el('h1', { class: 'screen-title' }, 'Needs attention'),
     el('div', { class: 'counters' },
       counter('bad', groups.overdue.length, 'Overdue'),
       counter('soon', groups.actSoon.length, 'Act soon'),

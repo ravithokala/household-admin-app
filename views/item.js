@@ -49,7 +49,6 @@ export function itemDetail(main, id) {
         fact('Repeats', Model.recurrenceLabel(item.recurrence_unit, item.recurrence_every)),
         fact('Lead time', `${item.lead_time_days} days`),
         fact('Next date from', item.recurrence_unit === 'none' ? null : item.roll_from === 'done' ? 'the day it is done' : 'the old due date'),
-        fact('Whose job', item.owners.length ? item.owners.join(', ') : null),
         fact('Provider', item.provider),
         fact('Reference', item.reference),
         fact('Cost', Model.money(item.cost_pence)),

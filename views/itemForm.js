@@ -5,9 +5,9 @@ import { Templates } from '../shared/templates.js';
 import { Model } from '../shared/model.js';
 import { Dates } from '../shared/dates.js';
 import { Renewals } from '../shared/renewals.js';
-import { data, status, saveItem } from '../store/store.js';
+import { data, saveItem } from '../store/store.js';
 import { openSheet, toast } from './sheet.js';
-import { field, input, select, textarea, money, chips, saveButton, showErrors } from './fields.js';
+import { field, input, select, textarea, money, saveButton, showErrors } from './fields.js';
 import { entitySheet } from './entities.js';
 
 /**
@@ -87,7 +87,6 @@ export function itemSheet(item, template = null) {
   showEvery();
   const rollFrom = select(start.roll_from, [['due', 'The old due date (keeps the anniversary)'], ['done', 'The day it was done']]);
 
-  const owners = chips(status.users, start.owners);
   const provider = input('text', start.provider, { maxlength: 120 });
   const reference = input('text', start.reference, { maxlength: 80, autocomplete: 'off' });
   const cost = money(start.cost_pence);
@@ -111,7 +110,7 @@ export function itemSheet(item, template = null) {
     const r = await saveItem(id, {
       title: title.get(), category: category.get(), template_id: start.template_id, entity_type: entityType.get(), entity_id: entityId.get(),
       due_date: due.get(), lead_time_days: lead.get(), recurrence_unit: unit.get(), recurrence_every: every.get(), roll_from: rollFrom.get(),
-      owners: owners.get(), provider: provider.get(), reference: reference.get(), cost_pence: cost.get(), notes: notes.get(),
+      provider: provider.get(), reference: reference.get(), cost_pence: cost.get(), notes: notes.get(),
       attachments: refFields.map((f) => ({ label: f.label.get(), location: f.location.get() })).filter((a) => a.label || a.location),
       archived: start.archived,
     });
@@ -130,7 +129,6 @@ export function itemSheet(item, template = null) {
     actBy,
     el('div', { class: 'row2' }, field('Repeats', unit.node), everyField),
     field('Next due date counts from', rollFrom.node),
-    status.users.length > 1 ? field('Whose job (none = everyone)', owners.node) : '',
     el('details', { class: 'more-fields', open: Boolean(start.provider || start.reference || start.cost_pence !== null || start.notes || start.attachments.length) },
       el('summary', {}, 'Provider, reference, cost and notes'),
       field('Provider', provider.node),

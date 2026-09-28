@@ -148,8 +148,8 @@ export function backup(data, now) {
 /**
  * The items shown on a list, filtered and searched. Every word must match somewhere.
  * @param {Data} data
- * @param {{ category?: string, entity?: string, query?: string, done?: boolean, who?: string|null }} filters
- *   entity: an entity id, or 'household'; who: only items owned by this user (or by everyone)
+ * @param {{ category?: string, entity?: string, query?: string, done?: boolean }} filters
+ *   entity: an entity id, or 'household'
  */
 export function filterItems(data, filters) {
   const words = (filters.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
@@ -157,7 +157,6 @@ export function filterItems(data, filters) {
     if (i.deleted || (i.archived && !filters.done)) return false;
     if (filters.category && i.category !== filters.category) return false;
     if (filters.entity === 'household' ? i.entity_type !== 'household' : filters.entity && i.entity_id !== filters.entity) return false;
-    if (filters.who && i.owners.length > 0 && !i.owners.includes(filters.who)) return false;
     if (!words.length) return true;
     const entity = i.entity_id ? data.entities[i.entity_id] : null;
     const text = [i.title, i.provider, i.reference, i.notes, entity?.name, entity?.reg, ...i.attachments.map((a) => a.label)].filter(Boolean).join(' ').toLowerCase();
