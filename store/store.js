@@ -89,10 +89,20 @@ async function write(make) {
   if (!r.ok) return { ok: false, errors: r.errors };
   /** @type {OpResult} */
   const result = r.data.results[0];
-  // Accepted: the saved rows. Refused as out of date: the other person's version, so the screen shows it.
+  // Accepted: the saved rows. Refused as out of date: the current version, so the screen shows it.
   await keep(result.rows);
-  if (!result.ok) return { ok: false, errors: result.errors.length ? result.errors : [{ field: 'request', code: result.code ?? 'NOT_SAVED', message: 'The change was not saved.' }] };
-  return { ok: true, rows: result.rows };
+  if (result.ok) return { ok: true, rows: result.rows };
+  if (result.code === 'CONFLICT') {
+    const row = [...result.rows.items, ...result.rows.entities][0];
+    const mine = row?.updated_by === status.user;
+    // A new item or person that already exists with this form's id can only be this form's own earlier
+    // tap, whose answer was lost on the way back: it was saved.
+    if (mine && change.op.payload.base_version === 0) return { ok: true, rows: result.rows };
+    if (mine) {
+      return refuse('You changed this a moment ago, probably with an earlier tap whose answer was lost. What was saved is shown now: close this and check it.');
+    }
+  }
+  return { ok: false, errors: result.errors.length ? result.errors : [{ field: 'request', code: result.code ?? 'NOT_SAVED', message: 'The change was not saved.' }] };
 }
 
 /** @param {ChangedRows} rows */

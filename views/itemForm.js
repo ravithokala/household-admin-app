@@ -45,6 +45,9 @@ export function itemSheet(item, template = null) {
     } : {}),
   };
   const hint = Templates.get(start.template_id)?.hint;
+  // The new item's id is fixed when the form opens, so tapping Add again after a lost answer resends
+  // the same item instead of making a second one.
+  const newId = crypto.randomUUID();
 
   const title = input('text', start.title, { maxlength: 120, autocomplete: 'off' });
   const category = select(start.category, Templates.CATEGORIES.map((c) => [c.id, c.label]));
@@ -116,7 +119,7 @@ export function itemSheet(item, template = null) {
 
   const messages = el('div', { class: 'messages' });
   const save = saveButton(item ? 'Save' : 'Add', async () => {
-    const id = item?.item_id ?? crypto.randomUUID();
+    const id = item?.item_id ?? newId;
     const r = await saveItem(id, {
       title: title.get(), category: category.get(), template_id: start.template_id, entity_type: entityType.get(), entity_id: entityId.get(),
       due_date: due.get(), lead_time_days: lead.get(), recurrence_unit: unit.get(), recurrence_every: every.get(), roll_from: rollFrom.get(),

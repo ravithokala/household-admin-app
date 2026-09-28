@@ -52,9 +52,11 @@ export function entitySheet(entity, type, onSaved) {
   const rental = checkbox(entity?.is_rental ?? false, 'This is a rental property');
   const messages = el('div', { class: 'messages' });
   const label = Model.ENTITY_LABELS[type].toLowerCase();
+  // Fixed when the form opens: tapping Add again after a lost answer resends the same one.
+  const newId = crypto.randomUUID();
 
   const save = saveButton(entity ? 'Save' : 'Add', async () => {
-    const id = entity?.entity_id ?? crypto.randomUUID();
+    const id = entity?.entity_id ?? newId;
     const r = await saveEntity(id, { entity_type: type, name: name.get(), reg: reg.get(), make: make.get(), model: model.get(), address: address.get(), is_rental: rental.get(), calendar_code: code.get() });
     if (!r.ok) { showErrors(messages, r.errors); return; }
     sheet.close();
