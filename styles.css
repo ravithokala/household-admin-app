@@ -39,8 +39,6 @@ header { position: sticky; top: 0; z-index: 3; background: var(--bg); border-bot
 .top { display: flex; align-items: center; gap: 10px; min-height: 52px; max-width: 760px; margin: 0 auto; }
 .brand-mark { width: 26px; height: 26px; border-radius: 7px; background: url(icons/icon.svg) center / cover; flex: none; }
 .app-name { font-weight: 700; font-size: 17px; flex: 1; white-space: nowrap; }
-.app-name .title-short { display: none; }
-@media (max-width: 359px) { .app-name .title-long { display: none; } .app-name .title-short { display: inline; } }
 .badge { border: 0; border-radius: 12px; padding: 4px 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .badge.offline { background: var(--soft); color: var(--muted); }
 .badge.problem { background: var(--bad-bg); color: var(--bad); }

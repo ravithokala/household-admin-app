@@ -1,6 +1,6 @@
 {
-  "name": "Household Admin & Renewals",
-  "short_name": "Renewals",
+  "name": "Household Admin",
+  "short_name": "Household Admin",
   "description": "Household renewals by act-by date",
   "start_url": "./",
   "scope": "./",
