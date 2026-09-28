@@ -11,6 +11,23 @@ import { session, saveSession, forgetSession, googleToken } from './auth.js';
 /** How long the last call took, end to end and on the server. */
 export let lastTiming = { total_ms: 0, server_ms: /** @type {number|null} */ (null), setup_ms: /** @type {number|null} */ (null), served: /** @type {string|null} */ (null) };
 
+/** How long to wait for Apps Script before giving up. */
+const TIMEOUT_MS = 45000;
+
+/**
+ * The request did not get an answer from the app's server code: no connection, or Google
+ * answered with its own error page, or it took too long. Safe to retry: every write carries an
+ * op_id the server applies only once.
+ */
+export class Unreachable extends Error {
+  /** @param {string} message @param {boolean} offline */
+  constructor(message, offline) {
+    super(message);
+    this.name = 'Unreachable';
+    this.offline = offline;
+  }
+}
+
 /**
  * One POST. The body is plain text, so the browser sends it without a CORS pre-flight,
  * which Apps Script cannot answer.
@@ -19,15 +36,38 @@ export let lastTiming = { total_ms: 0, server_ms: /** @type {number|null} */ (nu
  */
 async function post(body) {
   const started = performance.now();
-  const response = await fetch(CONFIG.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-    redirect: 'follow',
-  });
-  if (!response.ok) throw new Error(`The server answered ${response.status}`);
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
+  /** @type {Response} */
+  let response;
+  /** @type {string} */
+  let text;
+  try {
+    response = await fetch(CONFIG.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body),
+      redirect: 'follow',
+      signal: abort.signal,
+    });
+    text = await response.text();
+  } catch (e) {
+    // A failed fetch looks the same whether the phone is offline or Google sent its own error page
+    // (which has no CORS header): only the phone's own online flag tells them apart.
+    if (!navigator.onLine) throw new Unreachable("You're offline", true);
+    throw new Unreachable(abort.signal.aborted ? 'The server took too long to answer' : "Couldn't reach the server (Google may be busy)", false);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!response.ok) throw new Unreachable(`The server answered ${response.status}`, false);
   /** @type {ApiResponse} */
-  const result = await response.json();
+  let result;
+  try {
+    result = JSON.parse(text);
+  } catch (e) {
+    // Google's own error page instead of the app's answer.
+    throw new Unreachable("The server sent an unexpected answer (Google may be busy)", false);
+  }
   lastTiming = { total_ms: Math.round(performance.now() - started), server_ms: result.server_ms ?? null, setup_ms: result.setup_ms ?? null, served: result.served ?? null };
   return result;
 }

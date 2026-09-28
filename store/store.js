@@ -2,7 +2,7 @@
 
 import * as db from './db.js';
 import * as changes from './changes.js';
-import { call } from '../api.js';
+import { call, Unreachable } from '../api.js';
 
 /**
  * The app's data (ADR-003, as family-calendar): the sheet is the master copy; this phone keeps a
@@ -55,8 +55,11 @@ const who = () => ({ user: status.user, users: status.users, now: new Date().toI
 /** @param {string} message @returns {{ ok: false, errors: Issue[] }} */
 const refuse = (message) => ({ ok: false, errors: [{ field: 'request', code: 'NOT_SAVED', message }] });
 
-/** Whether a failure means there is no connection. @param {unknown} e */
-const isOffline = (e) => !navigator.onLine || /fetch|network|load failed/i.test(e instanceof Error ? e.message : String(e));
+/** Whether a failure means this phone has no connection (not just a busy server). @param {unknown} e */
+const isOffline = (e) => !navigator.onLine || (e instanceof Unreachable && e.offline);
+
+/** How long to wait before the one automatic retry of a save. */
+const RETRY_MS = 2000;
 
 /**
  * Checks a change here, sends it, and keeps what the server returns. Nothing is saved on the
@@ -72,8 +75,16 @@ async function write(make) {
   let r;
   try {
     r = await call('sync.push', { ops: [change.op] });
-  } catch (e) {
-    return refuse(isOffline(e) ? "You're offline: connect to save." : `Could not save: ${e instanceof Error ? e.message : String(e)}`);
+  } catch (first) {
+    if (isOffline(first)) return refuse("You're offline: connect to save.");
+    // Google hiccup: try once more. Safe: the server applies each op_id once, so a save that did
+    // arrive the first time is not made twice.
+    try {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+      r = await call('sync.push', { ops: [change.op] });
+    } catch (e) {
+      return refuse(isOffline(e) ? "You're offline: connect to save." : `${e instanceof Error ? e.message : String(e)}. Nothing was lost: try again in a moment.`);
+    }
   }
   if (!r.ok) return { ok: false, errors: r.errors };
   /** @type {OpResult} */
