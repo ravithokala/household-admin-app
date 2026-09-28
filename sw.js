@@ -5,7 +5,7 @@
  * IndexedDB (store/db.js). Requests to other sites (the API, Google sign-in) go to the network.
  * tests/pwa.test.js checks SHELL lists every file of the app. Bump VERSION with each publish.
  */
-const VERSION = 'shell-v6';
+const VERSION = 'shell-v7';
 const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'auth.js', 'config.js', 'dom.js', 'theme.js', 'theme-boot.js', 'version.js', 'styles.css',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'shared/dates.js', 'shared/model.js', 'shared/templates.js', 'shared/sensitive.js', 'shared/validation.js', 'shared/renewals.js',

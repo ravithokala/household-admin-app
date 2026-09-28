@@ -1,5 +1,5 @@
 {
-  "name": "Household Admin",
+  "name": "Household",
   "short_name": "Household",
   "description": "Household renewals by act-by date",
   "start_url": "./",
