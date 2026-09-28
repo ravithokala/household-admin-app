@@ -2,9 +2,8 @@
 
 import { el, today } from '../dom.js';
 import { Renewals } from '../shared/renewals.js';
-import { data, bulk } from '../store/store.js';
+import { data } from '../store/store.js';
 import { itemRow, empty } from './parts.js';
-import { toast } from './sheet.js';
 
 /**
  * Home: only what needs attention, by act-by date. Everything overdue, and whatever must be
@@ -38,17 +37,5 @@ export function dashboard(main) {
     total === 0 && !noItems ? empty(`Nothing needs attention in the next ${Renewals.HORIZON_DAYS} days.`) : '',
     noItems ? el('div', { class: 'card welcome' },
       el('h2', {}, 'Nothing tracked yet'),
-      el('p', {}, 'Tap + to add a renewal from a template, or load some sample items to try the app. Sample items can be cleared in one go from More.'),
-      el('button', { class: 'button', type: 'button', onclick: async (/** @type {Event} */ ev) => {
-        const button = /** @type {HTMLButtonElement} */ (ev.currentTarget);
-        button.disabled = true;
-        try {
-          const r = await bulk('sample.load');
-          toast(r.ok ? 'Sample items loaded.' : r.errors.map((e) => e.message).join(' '));
-        } catch (e) {
-          toast('Loading sample items needs a connection.');
-        } finally {
-          button.disabled = false;
-        }
-      } }, 'Load sample items')) : '');
+      el('p', {}, 'Tap + to add your first renewal. Templates fill in the lead time and how often it repeats.')) : '');
 }

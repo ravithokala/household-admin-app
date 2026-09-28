@@ -37,7 +37,7 @@ export function itemRow(item) {
   return el('li', {},
     el('a', { class: `row status-${d.status}`, href: `#/item/${item.item_id}` },
       el('div', { class: 'row-main' },
-        el('div', { class: 'row-title' }, item.title, item.is_sample ? el('span', { class: 'tag' }, 'Sample') : ''),
+        el('div', { class: 'row-title' }, item.title),
         el('div', { class: 'row-sub' }, belongsTo(item)),
         el('div', { class: 'row-when' }, when)),
       statusPill(d.status, d.expired)));

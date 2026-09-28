@@ -7,27 +7,15 @@ import { backup } from '../store/changes.js';
 import { openSheet, toast } from './sheet.js';
 import { busy } from './fields.js';
 import { applyTheme, savedTheme } from '../theme.js';
+import { systemSection } from './system.js';
 
 /**
- * More: vehicles/homes/people, backup and restore, sample data, appearance, account.
+ * More: vehicles/homes/people, sync, backup and restore, appearance, system check, account.
  * @param {HTMLElement} main
  * @param {{ signOut: () => Promise<void> }} actions
  */
 export function more(main, actions) {
-  const live = Object.values(data.items).filter((i) => !i.deleted);
-  const sampleCount = live.filter((i) => i.is_sample).length;
   const synced = status.lastSynced ? new Date(status.lastSynced) : null;
-
-  /** @param {string} action @param {string} done */
-  const run = (action, done) => async (/** @type {Event} */ ev) => {
-    const button = /** @type {HTMLButtonElement} */ (ev.currentTarget);
-    try {
-      const r = await busy(button, () => bulk(action));
-      toast(r.ok ? done : r.errors.map((e) => e.message).join(' '));
-    } catch (e) {
-      toast('This needs a connection. Try again when online.');
-    }
-  };
 
   const themeChoice = (/** @type {string} */ value, /** @type {string} */ label) => el('button', { type: 'button', 'aria-pressed': String(savedTheme() === value),
     onclick: () => { applyTheme(value); more(main, actions); } }, label);
@@ -52,14 +40,9 @@ export function more(main, actions) {
         el('button', { class: 'button', type: 'button', onclick: exportBackup }, 'Download backup'),
         el('button', { class: 'button', type: 'button', onclick: importBackup }, 'Restore from a backup…'))),
     el('section', { class: 'card' },
-      el('h2', {}, 'Sample data'),
-      el('p', { class: 'muted small' }, sampleCount ? `${sampleCount} sample item(s) loaded. Clearing removes only sample items, for everyone.` : 'Load a few realistic, clearly marked sample items to try the app.'),
-      sampleCount
-        ? el('button', { class: 'button danger-text', type: 'button', onclick: run('sample.clear', 'Sample data cleared.') }, 'Clear sample data')
-        : el('button', { class: 'button', type: 'button', onclick: run('sample.load', 'Sample items loaded.') }, 'Load sample items')),
-    el('section', { class: 'card' },
       el('h2', {}, 'Appearance'),
       el('div', { class: 'segmented', role: 'group', 'aria-label': 'Theme' }, themeChoice('auto', 'Auto'), themeChoice('light', 'Light'), themeChoice('dark', 'Dark'))),
+    systemSection(),
     el('section', { class: 'card' },
       el('h2', {}, 'Account'),
       el('p', {}, status.user ? `Signed in as ${status.user}.` : 'Signed in.', status.users.length > 1 ? ` App users: ${status.users.join(', ')}.` : ''),
@@ -98,7 +81,8 @@ function importBackup() {
         sheet.close();
         toast(mode === 'replace' ? 'Restored.' : `Added ${r.data.added.items} item(s); ${r.data.skipped} already here.`);
       } catch (e) {
-        toast('Restoring needs a connection.');
+        // Say what went wrong: not every failure is the connection.
+        toast(navigator.onLine ? `Could not restore: ${e instanceof Error ? e.message : String(e)}` : 'Restoring needs a connection.');
       }
     };
     const sheet = openSheet('Restore a backup', el('div', { class: 'form' },

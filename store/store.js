@@ -197,7 +197,7 @@ async function pull() {
 }
 
 /**
- * An online-only request that changes data in bulk (sample data, restore); then a full reload.
+ * An online-only request that changes data in bulk (restoring a backup); then a full reload.
  * @param {string} action @param {unknown} [payload]
  */
 export async function bulk(action, payload = {}) {

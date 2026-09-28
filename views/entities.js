@@ -29,7 +29,7 @@ export function entitiesScreen(main) {
         of.length === 0 ? empty(`No ${label.toLowerCase()}s yet.`) : el('ul', { class: 'rows' }, of.map((e) => el('li', {},
           el('button', { class: 'row', type: 'button', onclick: () => entitySheet(e, type) },
             el('div', { class: 'row-main' },
-              el('div', { class: 'row-title' }, e.name, e.is_sample ? el('span', { class: 'tag' }, 'Sample') : ''),
+              el('div', { class: 'row-title' }, e.name),
               el('div', { class: 'row-sub' }, [e.reg, [e.make, e.model].filter(Boolean).join(' '), e.address, e.is_rental ? 'Rental' : ''].filter(Boolean).join(' · ')),
               el('div', { class: 'row-when' }, `${count(e.entity_id)} item(s)`)))))));
     }));
