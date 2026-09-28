@@ -17,7 +17,7 @@ import { data, status } from '../store/store.js';
 
 /** @type {{ running: true } | { report: Report } | null} */
 let state = null;
-/** Draws the section now on screen: More redraws itself on every sync, replacing it. */
+/** Draws the section now on screen: More redraws itself on every refresh, replacing it. */
 let drawLatest = () => { /* no section yet */ };
 
 /**
@@ -29,13 +29,12 @@ async function phoneChecks(serverCounts) {
   /** @type {CheckLine[]} */
   const lines = [];
   lines.push({ name: 'App version', ok: VERSION !== 'local', detail: VERSION === 'local' ? 'An unpublished copy' : VERSION });
-  lines.push({ name: 'Connection', ok: navigator.onLine, detail: navigator.onLine ? 'Online' : 'Offline: changes wait on this phone until the connection is back' });
+  lines.push({ name: 'Connection', ok: navigator.onLine, detail: navigator.onLine ? 'Online' : 'Offline: viewing only; saving needs a connection' });
 
   const synced = status.lastSynced ? new Date(status.lastSynced) : null;
-  const when = synced ? `last synced ${uk(synced.toISOString().slice(0, 10))} at ${synced.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'not synced yet';
-  lines.push(status.error ? { name: 'Sync', ok: false, detail: `The last sync failed · ${when}` }
-    : status.pending ? { name: 'Sync', ok: false, detail: `${status.pending} change(s) waiting to be sent · ${when}` }
-      : { name: 'Sync', ok: synced !== null, detail: `All changes saved to the sheet · ${when}` });
+  const when = synced ? `${uk(synced.toISOString().slice(0, 10))} at ${synced.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : null;
+  lines.push(status.error ? { name: 'Updates', ok: false, detail: `The last update from the sheet failed${when ? ` · last good one ${when}` : ''}` }
+    : { name: 'Updates', ok: when !== null, detail: when ? `Last updated from the sheet ${when}` : 'Not updated from the sheet yet' });
 
   const mine = {
     items: Object.values(data.items).filter((i) => !i.deleted).length,
@@ -46,13 +45,13 @@ async function phoneChecks(serverCounts) {
   if (!serverCounts) lines.push({ name: 'Phone copy', ok: false, detail: `${summary} · could not compare with the sheet` });
   else {
     const same = mine.items === serverCounts.items && mine.entities === serverCounts.entities && mine.history === serverCounts.history;
-    lines.push({ name: 'Phone copy', ok: same || status.pending > 0,
-      detail: same ? `${summary}, the same as the sheet` : status.pending > 0 ? `${summary} · differs until the waiting changes are sent`
-        : `${summary}, but the sheet has ${serverCounts.items} items, ${serverCounts.entities} vehicles/homes/people, ${serverCounts.history} history entries: tap Sync now` });
+    lines.push({ name: 'Phone copy', ok: same,
+      detail: same ? `${summary}, the same as the sheet`
+        : `${summary}, but the sheet has ${serverCounts.items} items, ${serverCounts.entities} vehicles/homes/people, ${serverCounts.history} history entries: close and reopen the app` });
   }
 
   const offline = Boolean(navigator.serviceWorker?.controller);
-  lines.push({ name: 'Works offline', ok: offline, detail: offline ? 'The app is saved on this phone and opens without a connection' : 'Not yet: open the app once more while online' });
+  lines.push({ name: 'Works offline', ok: offline, detail: offline ? 'The app opens without a connection (viewing only)' : 'Not yet: open the app once more while online' });
 
   /** @type {boolean|undefined} */
   let kept;

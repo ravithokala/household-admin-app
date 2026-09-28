@@ -2,7 +2,7 @@
 
 import { el, uk } from '../dom.js';
 import { VERSION } from '../version.js';
-import { data, status, sync, bulk } from '../store/store.js';
+import { data, status, bulk } from '../store/store.js';
 import { backup } from '../store/changes.js';
 import { openSheet, toast } from './sheet.js';
 import { busy } from './fields.js';
@@ -10,7 +10,7 @@ import { applyTheme, savedTheme } from '../theme.js';
 import { systemSection } from './system.js';
 
 /**
- * More: vehicles/homes/people, sync, backup and restore, appearance, system check, account.
+ * More: vehicles/homes/people, data status, backup and restore, appearance, system check, account.
  * @param {HTMLElement} main
  * @param {{ signOut: () => Promise<void> }} actions
  */
@@ -26,13 +26,10 @@ export function more(main, actions) {
       el('h2', {}, 'Household'),
       el('a', { class: 'menu-link', href: '#/entities' }, 'Vehicles, homes and people', el('span', { class: 'chevron' }, '›'))),
     el('section', { class: 'card' },
-      el('h2', {}, 'Sync'),
-      el('p', {}, status.pending ? `${status.pending} change(s) waiting to be sent.` : 'All changes are saved to the sheet.'),
-      el('p', { class: 'muted small' }, synced ? `Last synced ${uk(synced.toISOString().slice(0, 10))} at ${synced.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.` : 'Not synced yet.',
-        status.error ? ` Last problem: ${status.error}` : ''),
-      el('button', { class: 'button', type: 'button', onclick: async (/** @type {Event} */ ev) => {
-        try { await busy(/** @type {HTMLButtonElement} */ (ev.currentTarget), () => sync()); toast('Up to date.'); } catch (e) { toast(status.online ? `Sync failed: ${status.error}` : 'Offline: changes will be sent when the connection is back.'); }
-      } }, 'Sync now')),
+      el('h2', {}, 'Data'),
+      el('p', {}, status.online ? 'Changes are saved straight to the sheet; this phone keeps a copy for quick opening.' : 'Offline: you can view everything; saving needs a connection.'),
+      el('p', { class: 'muted small' }, synced ? `Updated from the sheet ${uk(synced.toISOString().slice(0, 10))} at ${synced.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.` : 'Not updated yet.',
+        status.error ? ` Last problem: ${status.error}` : '')),
     el('section', { class: 'card' },
       el('h2', {}, 'Backup'),
       el('p', { class: 'muted small' }, 'The sheet in Google Drive is the main copy. A backup file is an extra copy you keep yourself; it can be made offline.'),

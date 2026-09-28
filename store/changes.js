@@ -5,10 +5,10 @@ import { Renewals } from '../shared/renewals.js';
 import { Model } from '../shared/model.js';
 
 /**
- * Turning what someone did into a queued write (Op) plus its effect on this phone's copy.
- * Pure: no storage, no network, so it is tested in Node. The same validation as the server runs
- * first, so a change made offline is not queued only to be refused later. Versions go up by one
- * per write, exactly as on the server, so several writes to one item can queue offline.
+ * Turning what someone did into a write for the server (Op), checked with the server's own rules
+ * first so mistakes show at once, plus the rows it will make. Pure: no storage, no network, so it
+ * is tested in Node. Saving is online-only (ADR-003): store.js sends the Op and keeps the rows the
+ * server returns.
  *
  * @typedef {{ items: Record<string, Item>, history: Record<string, HistoryEntry>, entities: Record<string, Entity> }} Data
  * @typedef {{ user: string, users: string[], now: string, newId: () => string }} Who
@@ -108,26 +108,13 @@ export function removeEntity(data, id, who) {
 }
 
 /**
- * Copies rows into the data (the newest copy of each row wins by replacing it).
- * @param {Data} data @param {ChangedRows} rows @param {Set<string>} [skip]  ids to leave alone
+ * Copies rows into the data, replacing any older copy of each.
+ * @param {Data} data @param {ChangedRows} rows
  */
-export function applyRows(data, rows, skip = new Set()) {
-  rows.items.filter((r) => !skip.has(r.item_id)).forEach((r) => { data.items[r.item_id] = r; });
-  rows.history.filter((r) => !skip.has(r.history_id)).forEach((r) => { data.history[r.history_id] = r; });
-  rows.entities.filter((r) => !skip.has(r.entity_id)).forEach((r) => { data.entities[r.entity_id] = r; });
-}
-
-/**
- * The ids a queued write touches: their local copies must not be overwritten by a pull until
- * the server has answered for the write.
- * @param {Op[]} ops
- */
-export function pendingIds(ops) {
-  const ids = new Set();
-  for (const op of ops) {
-    for (const key of ['item_id', 'entity_id', 'history_id']) if (typeof op.payload?.[key] === 'string') ids.add(op.payload[key]);
-  }
-  return /** @type {Set<string>} */ (ids);
+export function applyRows(data, rows) {
+  rows.items.forEach((r) => { data.items[r.item_id] = r; });
+  rows.history.forEach((r) => { data.history[r.history_id] = r; });
+  rows.entities.forEach((r) => { data.entities[r.entity_id] = r; });
 }
 
 /**

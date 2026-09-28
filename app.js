@@ -11,7 +11,6 @@ import { itemDetail } from './views/item.js';
 import { more } from './views/more.js';
 import { entitiesScreen } from './views/entities.js';
 import { templatePicker } from './views/itemForm.js';
-import { toast } from './views/sheet.js';
 
 /**
  * Household Admin (ADR-001). Starts the app, signs in, loads this phone's copy, keeps it in step
@@ -59,9 +58,7 @@ function show() {
 function showSyncState() {
   const badge = $('sync');
   const s = store.status;
-  const text = !s.online ? (s.pending ? `Offline · ${s.pending} waiting` : 'Offline')
-    : s.error ? 'Sync problem'
-      : s.pending ? `${s.pending} waiting` : s.syncing ? 'Syncing…' : '';
+  const text = !s.online ? 'Offline · view only' : s.error ? 'Not updated' : '';
   badge.textContent = text;
   badge.hidden = text === '';
   badge.className = `badge ${!s.online ? 'offline' : s.error ? 'problem' : 'busy'}`;
@@ -69,7 +66,6 @@ function showSyncState() {
 }
 
 async function signOut() {
-  if (store.status.pending && !window.confirm(`${store.status.pending} change(s) have not been sent yet and will be lost. Sign out anyway?`)) return;
   await endSession();
   signOutOfGoogle();
   await store.forget();
@@ -99,7 +95,6 @@ async function start() {
   $('sync').addEventListener('click', () => { window.location.hash = '#/more'; });
   window.addEventListener('hashchange', () => { show(); window.scrollTo(0, 0); });
   store.onChange(() => show());
-  store.onProblem((p) => toast(p.message, [], p.redo ? () => { p.redo?.(); } : undefined, p.redo ? 'Redo my change' : undefined));
 
   let hasCopy = false;
   try {
@@ -131,7 +126,7 @@ async function start() {
   else $('main').replaceChildren(el('p', { class: 'muted' }, 'Loading…'));
   store.keepInStep();
   try {
-    await store.sync();
+    await store.refresh();
   } catch (e) {
     if (!hasCopy) showError(store.status.online ? `Could not load: ${store.status.error}` : 'Offline: connect once to load the data.');
   }

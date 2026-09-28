@@ -31,7 +31,10 @@ export function itemDetail(main, id) {
     const r = await setItemDeleted(id, true);
     if (!r.ok) { toast(r.errors.map((e) => e.message).join(' ')); return; }
     window.location.hash = '#/all';
-    toast(`Deleted ${item.title}.`, [], () => { setItemDeleted(id, false); });
+    toast(`Deleted ${item.title}.`, [], async () => {
+      const undone = await setItemDeleted(id, false);
+      toast(undone.ok ? `Restored ${item.title}.` : undone.errors.map((e) => e.message).join(' '));
+    });
   };
 
   main.replaceChildren(
