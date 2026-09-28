@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; img-src 'self' data: blob:">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1F5F7A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Renewals">
+<title>Household Admin</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+<script src="theme-boot.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header>
+  <div class="top">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="app-name"><span class="title-long">Household Admin</span><span class="title-short">Renewals</span></span>
+    <button id="sync" class="badge" type="button" hidden></button>
+  </div>
+</header>
+<div id="signin"></div>
+<main id="main"><p class="muted">Loading…</p></main>
+<button id="add" class="fab" type="button" aria-label="Add an item" hidden>+</button>
+<nav id="tabs" aria-label="Screens"></nav>
+</body>
+</html>
