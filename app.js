@@ -6,6 +6,8 @@ import { sessionKey, signOut as endSession, signOutEverywhere as endEverySession
 import { el, $ } from './dom.js';
 import * as store from './store/store.js';
 import { updatedText } from './store/changes.js';
+import { VERSION } from './version.js';
+import { watchForUpdates } from './update.js';
 import { dashboard } from './views/dashboard.js';
 import { list } from './views/list.js';
 import { itemDetail } from './views/item.js';
@@ -114,6 +116,9 @@ async function start() {
   try { framed = window.top !== window.self; } catch (e) { framed = true; }
   if (framed) { showError('This app cannot be shown inside another page. Open it directly.'); return; }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { /* works without it */ });
+  // The app opens from its saved copy; a newer published version reloads the page into it (ADR-016),
+  // never over an open form.
+  const checkForUpdate = watchForUpdates({ running: VERSION, busy: () => Boolean(document.querySelector('dialog[open]')) });
   if (!CONFIG.apiUrl || !CONFIG.clientId) {
     showError('This app is not configured yet (config.js): see the README.');
     return;
@@ -122,8 +127,11 @@ async function start() {
   $('tabs').replaceChildren(...TABS.map(([id, label]) => el('a', { href: `#/${id}`, 'data-tab': id }, label)));
   $('add').addEventListener('click', () => templatePicker());
   $('sync').addEventListener('click', () => { window.location.hash = '#/more'; });
-  // Tapping the time and ↻ re-reads the sheet now (reads only).
-  $('refresh').addEventListener('click', () => { if (signedIn) store.refresh().catch(() => { /* shown in the header */ }); });
+  // Tapping the time and ↻ re-reads the sheet now (reads only), and checks for a newer version of the app.
+  $('refresh').addEventListener('click', () => {
+    checkForUpdate(true);
+    if (signedIn) store.refresh().catch(() => { /* shown in the header */ });
+  });
   window.addEventListener('hashchange', () => { show(); window.scrollTo(0, 0); });
   store.onChange(() => show());
 
