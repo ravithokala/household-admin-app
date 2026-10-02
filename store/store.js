@@ -3,6 +3,7 @@
 import * as db from './db.js';
 import * as changes from './changes.js';
 import { call, Unreachable, lastTiming } from '../api.js';
+import { copyTooOld } from '../freshness.js';
 
 /**
  * The app's data (ADR-003, as family-calendar): the sheet is the master copy; this phone keeps a
@@ -39,7 +40,12 @@ const changed = () => listeners.forEach((fn) => fn());
 
 /** Loads this phone's copy. @returns {Promise<boolean>} whether there was one */
 export async function load() {
-  const saved = await db.loadAll();
+  let saved = await db.loadAll();
+  // A copy not refreshed for 30 days is removed, not shown (ADR-018): the session has ended by then too.
+  if (copyTooOld(saved.meta.lastSynced, Date.now())) {
+    await db.clearAll();
+    saved = await db.loadAll();
+  }
   data.items = Object.fromEntries(saved.items.map((r) => [r.item_id, r]));
   data.history = Object.fromEntries(saved.history.map((r) => [r.history_id, r]));
   data.entities = Object.fromEntries(saved.entities.map((r) => [r.entity_id, r]));

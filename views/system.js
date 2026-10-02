@@ -3,6 +3,7 @@
 import { el, uk } from '../dom.js';
 import { VERSION } from '../version.js';
 import { call } from '../api.js';
+import { phoneChecks } from '../checks.js';
 import { data, status } from '../store/store.js';
 
 /**
@@ -25,11 +26,12 @@ let drawLatest = () => { /* no section yet */ };
  * @param {{ items: number, entities: number, history: number } | null} serverCounts
  * @returns {Promise<CheckLine[]>}
  */
-async function phoneChecks(serverCounts) {
+async function thisPhone(serverCounts) {
   /** @type {CheckLine[]} */
   const lines = [];
-  lines.push({ name: 'App version', ok: VERSION !== 'local', detail: VERSION === 'local' ? 'An unpublished copy' : VERSION });
-  lines.push({ name: 'Connection', ok: navigator.onLine, detail: navigator.onLine ? 'Online' : 'Offline: viewing only; saving needs a connection' });
+  // The checks every app shares (app-kit's checks.js); this app's own two go between them.
+  const shared = await phoneChecks(VERSION);
+  lines.push(shared.version, shared.connection);
 
   const synced = status.lastSynced ? new Date(status.lastSynced) : null;
   const when = synced ? `${uk(synced.toISOString().slice(0, 10))} at ${synced.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : null;
@@ -50,25 +52,7 @@ async function phoneChecks(serverCounts) {
         : `${summary}, but the sheet has ${serverCounts.items} items, ${serverCounts.entities} vehicles/homes/people, ${serverCounts.history} history entries: close and reopen the app` });
   }
 
-  // The saved copy of the app itself: the three apps share one cache storage, each under its own path.
-  const controlled = Boolean(navigator.serviceWorker?.controller);
-  let files = 0;
-  try {
-    const app = new URL('./', window.location.href).pathname;
-    for (const name of await caches.keys()) if (name.startsWith(app)) files += (await (await caches.open(name)).keys()).length;
-  } catch (e) { /* no cache storage: counted as none */ }
-  const offline = controlled && files > 0;
-  lines.push({ name: 'Works offline', ok: offline, detail: offline ? `The app opens without a connection (viewing only): ${files} files saved`
-    : controlled ? 'The saved copy of the app is missing: open the app once more while online' : 'Not yet: open the app once more while online' });
-
-  /** @type {boolean|undefined} */
-  let kept;
-  try { kept = await navigator.storage?.persisted?.(); } catch (e) { kept = undefined; }
-  // Information only: browsers decide this themselves (installed apps are usually kept).
-  lines.push({ name: 'Phone storage', ok: true,
-    detail: kept === true ? 'Kept: the browser will not clear this app\'s copy'
-      : kept === false ? 'May be cleared by the browser if space runs low (the sheet keeps everything; adding the app to the Home Screen helps)'
-        : 'This browser does not say' });
+  lines.push(shared.offline, shared.storage);
   return lines;
 }
 
@@ -117,7 +101,7 @@ export function systemSection() {
     } catch (e) {
       report.serverProblem = navigator.onLine ? (e instanceof Error ? e.message : String(e)) : 'no connection';
     }
-    report.phone = await phoneChecks(counts);
+    report.phone = await thisPhone(counts);
     if (state !== mine) return;
     state = { report };
     drawLatest();

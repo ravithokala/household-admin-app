@@ -8,6 +8,8 @@ import * as store from './store/store.js';
 import { updatedText } from './freshness.js';
 import { VERSION } from './version.js';
 import { watchForUpdates } from './update.js';
+import { inFrame, FRAMED_MESSAGE } from './guard.js';
+import { onSessionEnded } from './api.js';
 import { dashboard } from './views/dashboard.js';
 import { list } from './views/list.js';
 import { itemDetail } from './views/item.js';
@@ -111,10 +113,11 @@ function showError(message) {
 }
 
 async function start() {
-  // GitHub Pages cannot forbid framing: refuse to run inside another page (as the portfolio app).
-  let framed = false;
-  try { framed = window.top !== window.self; } catch (e) { framed = true; }
-  if (framed) { showError('This app cannot be shown inside another page. Open it directly.'); return; }
+  // GitHub Pages cannot forbid framing: refuse to run inside another page (app-kit's guard.js).
+  if (inFrame()) { showError(FRAMED_MESSAGE); return; }
+  // When the server ends this phone's session (expired, "sign out all devices" elsewhere, or the account
+  // no longer allowed), the saved copy goes too, and the app starts again at sign-in (ADR-018).
+  onSessionEnded(async () => { await store.forget(); window.location.reload(); });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { /* works without it */ });
   // The app opens from its saved copy; a newer published version reloads the page into it (ADR-016),
   // never over an open form.
