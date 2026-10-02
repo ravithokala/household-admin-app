@@ -6,7 +6,7 @@
  * tests/pwa.test.js checks SHELL lists every file of the app. Bump VERSION with each publish.
  * Only VERSION and SHELL are this app's own: the logic below the marker line comes from app-kit.
  */
-const VERSION = 'shell-v16';
+const VERSION = 'shell-v17';
 const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'auth.js', 'config.js', 'dom.js', 'theme.js', 'theme-boot.js', 'version.js', 'styles.css',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'shared/dates.js', 'shared/model.js', 'shared/templates.js', 'shared/sensitive.js', 'shared/validation.js', 'shared/renewals.js',
@@ -25,15 +25,27 @@ const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'auth.js', 'config.js', '
  */
 const sw = self;
 
+/**
+ * This app's saved copy. The apps share one origin (github.io), and so one cache storage: each
+ * app's caches are named by its own path ("/household-admin-app/shell-v16"), and an app only ever
+ * deletes its own. Until 2026-10-02 every app's worker deleted every cache but its own current
+ * one, so updating one app removed the other apps' saved copies (they then could not open with no
+ * connection until next opened online).
+ */
+const APP = new URL('./', sw.location.href).pathname;
+const CACHE = `${APP}${VERSION}`;
+/** Caches from before they were named by app ("shell-v15"): removed once. Never another app's current one. */
+const UNNAMED = /^shell-v\d+$/;
+
 sw.addEventListener('install', (/** @type {any} */ event) => {
   // 'reload' fetches each file from the site itself, not the browser's ten-minute copy.
-  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' }))))
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' }))))
     .then(() => sw.skipWaiting()));
 });
 
 sw.addEventListener('activate', (/** @type {any} */ event) => {
   event.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
+    .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && (k.startsWith(APP) || UNNAMED.test(k))).map((k) => caches.delete(k))))
     .then(() => sw.clients.claim()));
 });
 
@@ -85,7 +97,7 @@ function fromNetwork(request) {
   return fetch(request, { cache: 'no-cache' }).then((response) => {
     if (response.status === 200 && response.type === 'basic') {
       const copy = response.clone();
-      caches.open(VERSION).then((cache) => cache.put(request, copy));
+      caches.open(CACHE).then((cache) => cache.put(request, copy));
     }
     return response;
   });
@@ -117,7 +129,7 @@ async function networkOrSaved(event, waitMs, usedSaved) {
  * @param {any} request
  */
 async function offlineCopy(request) {
-  const cache = await caches.open(VERSION);
+  const cache = await caches.open(CACHE);
   const hit = await cache.match(request, { ignoreVary: true, ignoreSearch: true });
   if (hit && hit.status === 200) return hit;
   if (request.mode === 'navigate') {

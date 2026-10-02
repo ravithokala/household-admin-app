@@ -50,8 +50,16 @@ async function phoneChecks(serverCounts) {
         : `${summary}, but the sheet has ${serverCounts.items} items, ${serverCounts.entities} vehicles/homes/people, ${serverCounts.history} history entries: close and reopen the app` });
   }
 
-  const offline = Boolean(navigator.serviceWorker?.controller);
-  lines.push({ name: 'Works offline', ok: offline, detail: offline ? 'The app opens without a connection (viewing only)' : 'Not yet: open the app once more while online' });
+  // The saved copy of the app itself: the three apps share one cache storage, each under its own path.
+  const controlled = Boolean(navigator.serviceWorker?.controller);
+  let files = 0;
+  try {
+    const app = new URL('./', window.location.href).pathname;
+    for (const name of await caches.keys()) if (name.startsWith(app)) files += (await (await caches.open(name)).keys()).length;
+  } catch (e) { /* no cache storage: counted as none */ }
+  const offline = controlled && files > 0;
+  lines.push({ name: 'Works offline', ok: offline, detail: offline ? `The app opens without a connection (viewing only): ${files} files saved`
+    : controlled ? 'The saved copy of the app is missing: open the app once more while online' : 'Not yet: open the app once more while online' });
 
   /** @type {boolean|undefined} */
   let kept;
