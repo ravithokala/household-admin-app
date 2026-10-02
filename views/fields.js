@@ -75,9 +75,12 @@ export function saveButton(label, save) {
   button.addEventListener('click', async () => {
     button.disabled = true;
     button.textContent = 'Saving…';
+    // A slow save says so, instead of looking stuck (it is retried automatically).
+    const slow = setTimeout(() => { button.textContent = 'Still saving… (slow connection)'; }, 5000);
     try {
       await save();
     } finally {
+      clearTimeout(slow);
       button.disabled = false;
       button.textContent = label;
     }

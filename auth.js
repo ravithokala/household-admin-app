@@ -75,6 +75,9 @@ export async function init(clientId, buttonHost) {
   ready = true;
 }
 
+/** Whether Google's sign-in has loaded, so a prompt can appear (it has not if the app was opened offline). */
+export const canSignIn = () => ready;
+
 /**
  * A fresh Google ID token, from the button or Google's prompt; used only to start a session.
  * @returns {Promise<string>}

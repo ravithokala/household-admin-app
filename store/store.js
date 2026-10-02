@@ -60,6 +60,13 @@ const isOffline = (e) => !navigator.onLine || (e instanceof Unreachable && e.off
 
 /** How long to wait before the one automatic retry of a save. */
 const RETRY_MS = 2000;
+/**
+ * How long a save waits for its answer: a normal save takes 1 to 4 seconds. Short on the first try,
+ * because just after a connection returns the save often arrives but its answer does not (RT,
+ * 2026-10-02: "Saving…" seemed stuck); the retry then gets the answer, and is safe (one op_id).
+ */
+const SAVE_TIMEOUT_MS = 12000;
+const RETRY_TIMEOUT_MS = 25000;
 
 /**
  * Checks a change here, sends it, and keeps what the server returns. Nothing is saved on the
@@ -74,14 +81,14 @@ async function write(make) {
   /** @type {import('../api.js').ApiResponse} */
   let r;
   try {
-    r = await call('sync.push', { ops: [change.op] });
+    r = await call('sync.push', { ops: [change.op] }, { timeoutMs: SAVE_TIMEOUT_MS });
   } catch (first) {
     if (isOffline(first)) return refuse("You're offline: connect to save.");
     // Google hiccup: try once more. Safe: the server applies each op_id once, so a save that did
     // arrive the first time is not made twice.
     try {
       await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
-      r = await call('sync.push', { ops: [change.op] });
+      r = await call('sync.push', { ops: [change.op] }, { timeoutMs: RETRY_TIMEOUT_MS });
     } catch (e) {
       return refuse(isOffline(e) ? "You're offline: connect to save." : `${e instanceof Error ? e.message : String(e)}. Nothing was lost: try again in a moment.`);
     }

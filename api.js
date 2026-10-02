@@ -1,7 +1,7 @@
 // @ts-check
 
 import { CONFIG } from './config.js';
-import { session, saveSession, forgetSession, googleToken } from './auth.js';
+import { session, saveSession, forgetSession, googleToken, canSignIn } from './auth.js';
 
 /**
  * @typedef {{ field: string, code: string, message: string }} Issue
@@ -11,7 +11,7 @@ import { session, saveSession, forgetSession, googleToken } from './auth.js';
 /** How long the last call took, end to end and on the server. */
 export let lastTiming = { total_ms: 0, server_ms: /** @type {number|null} */ (null), setup_ms: /** @type {number|null} */ (null), served: /** @type {string|null} */ (null) };
 
-/** How long to wait for Apps Script before giving up. */
+/** How long to wait for Apps Script before giving up, unless the caller says otherwise. */
 const TIMEOUT_MS = 45000;
 
 /**
@@ -32,12 +32,13 @@ export class Unreachable extends Error {
  * One POST. The body is plain text, so the browser sends it without a CORS pre-flight,
  * which Apps Script cannot answer.
  * @param {Record<string, unknown>} body
+ * @param {number} [timeoutMs]
  * @returns {Promise<ApiResponse>}
  */
-async function post(body) {
+async function post(body, timeoutMs = TIMEOUT_MS) {
   const started = performance.now();
   const abort = new AbortController();
-  const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => abort.abort(), timeoutMs);
   /** @type {Response} */
   let response;
   /** @type {string} */
@@ -82,6 +83,8 @@ const reason = (r) => r.errors.map((e) => e.message).join('; ');
 export async function sessionKey() {
   const existing = session();
   if (existing) return existing;
+  // Opened offline, Google's sign-in never loaded: waiting for its prompt would never end.
+  if (!canSignIn()) throw new Unreachable('Signed out: close and reopen the app while online to sign in again', false);
   const started = await post({ id_token: await googleToken(), action: 'auth.start' });
   if (!started.ok) throw new Error(reason(started));
   saveSession(started.data.session, started.data.user);
@@ -93,11 +96,12 @@ export async function sessionKey() {
  * once after signing in again.
  * @param {string} action
  * @param {unknown} [payload]
+ * @param {{ timeoutMs?: number }} [options]  how long to wait for the answer
  * @returns {Promise<ApiResponse>}
  */
-export async function call(action, payload = {}) {
+export async function call(action, payload = {}, options = {}) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const result = await post({ session: await sessionKey(), action, payload });
+    const result = await post({ session: await sessionKey(), action, payload }, options.timeoutMs);
     if (result.ok || result.errors[0]?.code !== 'UNAUTHENTICATED' || attempt === 1) return result;
     forgetSession();
   }
