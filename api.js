@@ -13,6 +13,12 @@ export let lastTiming = { total_ms: 0, server_ms: /** @type {number|null} */ (nu
 
 /** How long to wait for Apps Script before giving up, unless the caller says otherwise. */
 const TIMEOUT_MS = 45000;
+/**
+ * How long a refresh (a request that only reads) waits. Connected but with no internet (mobile data
+ * used up) a request never fails, it hangs: the saved copy is already on screen, so give up sooner
+ * and say so. Well over the slowest normal answer (about 7 s, first open of the day).
+ */
+export const READ_WAIT_MS = 20000;
 
 /**
  * The request did not get an answer from the app's server code: no connection, or Google
@@ -56,7 +62,7 @@ async function post(body, timeoutMs = TIMEOUT_MS) {
     // A failed fetch looks the same whether the phone is offline or Google sent its own error page
     // (which has no CORS header): only the phone's own online flag tells them apart.
     if (!navigator.onLine) throw new Unreachable("You're offline", true);
-    throw new Unreachable(abort.signal.aborted ? 'The server took too long to answer' : "Couldn't reach the server (Google may be busy)", false);
+    throw new Unreachable(abort.signal.aborted ? `No answer after ${Math.round(timeoutMs / 1000)} seconds: is there a connection?` : "Couldn't reach the server (Google may be busy)", false);
   } finally {
     clearTimeout(timer);
   }

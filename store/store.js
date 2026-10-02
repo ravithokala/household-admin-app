@@ -2,7 +2,7 @@
 
 import * as db from './db.js';
 import * as changes from './changes.js';
-import { call, Unreachable } from '../api.js';
+import { call, Unreachable, READ_WAIT_MS } from '../api.js';
 
 /**
  * The app's data (ADR-003, as family-calendar): the sheet is the master copy; this phone keeps a
@@ -147,7 +147,7 @@ async function run() {
   status.refreshing = true;
   changed();
   try {
-    const r = await call('sync.pull', { since: status.since });
+    const r = await call('sync.pull', { since: status.since }, { timeoutMs: READ_WAIT_MS });
     if (!r.ok) throw new Error(r.errors.map((e) => e.message).join('; '));
     const pulled = /** @type {{ server_time: string, full: boolean, user: string, users: string[], items: Item[], history: HistoryEntry[], entities: Entity[] }} */ (r.data);
     if (pulled.full) {

@@ -2,7 +2,7 @@
 
 import { el, uk } from '../dom.js';
 import { VERSION } from '../version.js';
-import { call } from '../api.js';
+import { call, READ_WAIT_MS } from '../api.js';
 import { data, status } from '../store/store.js';
 
 /**
@@ -98,7 +98,7 @@ export function systemSection() {
     const report = { server: null, serverProblem: null, phone: [], ms: null };
     let counts = null;
     try {
-      const r = await call('system.check', {});
+      const r = await call('system.check', {}, { timeoutMs: READ_WAIT_MS });
       if (r.ok) {
         report.server = r.data.checks;
         report.ms = r.data.ms;
