@@ -2,7 +2,7 @@
 
 import * as db from './db.js';
 import * as changes from './changes.js';
-import { call, Unreachable, READ_WAIT_MS } from '../api.js';
+import { call, Unreachable, READ_WAIT_MS, lastTiming } from '../api.js';
 
 /**
  * The app's data (ADR-003, as family-calendar): the sheet is the master copy; this phone keeps a
@@ -26,6 +26,8 @@ export const status = {
   refreshing: false,
   /** Why the last refresh failed, if it did (not when simply offline). */
   error: /** @type {string|null} */ (null),
+  /** How long the last refresh took (shown beside the version in More). */
+  timing: /** @type {typeof lastTiming|null} */ (null),
 };
 
 /** @type {Set<() => void>} */
@@ -157,7 +159,7 @@ async function run() {
     }
     changes.applyRows(data, pulled);
     await db.saveRows(pulled, { replace: pulled.full });
-    Object.assign(status, { since: pulled.server_time, user: pulled.user, users: pulled.users, lastSynced: Date.now(), error: null, online: true });
+    Object.assign(status, { since: pulled.server_time, user: pulled.user, users: pulled.users, lastSynced: Date.now(), error: null, online: true, timing: { ...lastTiming } });
     await db.setMeta({ since: status.since, user: status.user, users: status.users, lastSynced: status.lastSynced });
   } catch (e) {
     status.online = !isOffline(e);
