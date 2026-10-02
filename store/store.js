@@ -2,7 +2,7 @@
 
 import * as db from './db.js';
 import * as changes from './changes.js';
-import { call, Unreachable, READ_WAIT_MS, lastTiming } from '../api.js';
+import { call, Unreachable, lastTiming } from '../api.js';
 
 /**
  * The app's data (ADR-003, as family-calendar): the sheet is the master copy; this phone keeps a
@@ -60,16 +60,6 @@ const refuse = (message) => ({ ok: false, errors: [{ field: 'request', code: 'NO
 /** Whether a failure means this phone has no connection (not just a busy server). @param {unknown} e */
 const isOffline = (e) => !navigator.onLine || (e instanceof Unreachable && e.offline);
 
-/** How long to wait before the one automatic retry of a save. */
-const RETRY_MS = 2000;
-/**
- * How long a save waits for its answer: a normal save takes 1 to 4 seconds. Short on the first try,
- * because just after a connection returns the save often arrives but its answer does not (RT,
- * 2026-10-02: "Saving…" seemed stuck); the retry then gets the answer, and is safe (one op_id).
- */
-const SAVE_TIMEOUT_MS = 12000;
-const RETRY_TIMEOUT_MS = 25000;
-
 /**
  * Checks a change here, sends it, and keeps what the server returns. Nothing is saved on the
  * phone unless the server accepted it (or, for a refused edit, the server's current row).
@@ -83,17 +73,11 @@ async function write(make) {
   /** @type {import('../api.js').ApiResponse} */
   let r;
   try {
-    r = await call('sync.push', { ops: [change.op] }, { timeoutMs: SAVE_TIMEOUT_MS });
-  } catch (first) {
-    if (isOffline(first)) return refuse("You're offline: connect to save.");
-    // Google hiccup: try once more. Safe: the server applies each op_id once, so a save that did
-    // arrive the first time is not made twice.
-    try {
-      await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
-      r = await call('sync.push', { ops: [change.op] }, { timeoutMs: RETRY_TIMEOUT_MS });
-    } catch (e) {
-      return refuse(isOffline(e) ? "You're offline: connect to save." : `${e instanceof Error ? e.message : String(e)}. Nothing was lost: try again in a moment.`);
-    }
+    // A save (app-kit's api.js, ADR-017): 12 seconds, then one automatic retry. Safe: both tries carry the
+    // op's id, and the server applies it once, so a save that did arrive the first time is not made twice.
+    r = await call('sync.push', { ops: [change.op] }, { requestId: change.op.op_id });
+  } catch (e) {
+    return refuse(isOffline(e) ? "You're offline: connect to save." : `${e instanceof Error ? e.message : String(e)}. Nothing was lost: try again in a moment.`);
   }
   if (!r.ok) return { ok: false, errors: r.errors };
   /** @type {OpResult} */
@@ -149,7 +133,7 @@ async function run() {
   status.refreshing = true;
   changed();
   try {
-    const r = await call('sync.pull', { since: status.since }, { timeoutMs: READ_WAIT_MS });
+    const r = await call('sync.pull', { since: status.since });
     if (!r.ok) throw new Error(r.errors.map((e) => e.message).join('; '));
     const pulled = /** @type {{ server_time: string, full: boolean, user: string, users: string[], items: Item[], history: HistoryEntry[], entities: Entity[] }} */ (r.data);
     if (pulled.full) {
