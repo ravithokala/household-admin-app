@@ -6,7 +6,7 @@
  * tests/pwa.test.js checks SHELL lists every file of the app. Bump VERSION with each publish.
  * Only VERSION and SHELL are this app's own: the logic below the marker line comes from app-kit.
  */
-const VERSION = 'shell-v17';
+const VERSION = 'shell-v18';
 const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'auth.js', 'config.js', 'dom.js', 'theme.js', 'theme-boot.js', 'version.js', 'styles.css',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'shared/dates.js', 'shared/model.js', 'shared/templates.js', 'shared/sensitive.js', 'shared/validation.js', 'shared/renewals.js',

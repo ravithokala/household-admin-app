@@ -2,7 +2,7 @@
 
 import { CONFIG } from './config.js';
 import { init, session, signOutOfGoogle } from './auth.js';
-import { sessionKey, signOut as endSession } from './api.js';
+import { sessionKey, signOut as endSession, signOutEverywhere as endEverySession } from './api.js';
 import { el, $ } from './dom.js';
 import * as store from './store/store.js';
 import { updatedText } from './store/changes.js';
@@ -44,7 +44,7 @@ function show() {
   else if (screen === 'all') list(main);
   else if (screen === 'item') itemDetail(main, arg);
   else if (screen === 'entities') entitiesScreen(main);
-  else more(main, { signOut });
+  else more(main, { signOut, signOutEverywhere });
   if (searching !== null) {
     const box = /** @type {HTMLInputElement|null} */ (main.querySelector('.search-input'));
     box?.focus();
@@ -74,8 +74,28 @@ function showSyncState() {
   badge.title = !s.online ? 'Offline · view only: saving needs a connection' : s.error ?? '';
 }
 
+/**
+ * Ends this account's sign-in on every device (a lost phone), then clears this phone as signing
+ * out does. Needs a connection: answers why it failed, or null.
+ * @returns {Promise<string|null>}
+ */
+async function signOutEverywhere() {
+  try {
+    const r = await endEverySession();
+    if (!r.ok) return r.errors.map((e) => e.message).join('; ');
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+  await clearThisPhone();
+  return null;
+}
+
 async function signOut() {
   await endSession();
+  await clearThisPhone();
+}
+
+async function clearThisPhone() {
   signOutOfGoogle();
   await store.forget();
   signedIn = false;

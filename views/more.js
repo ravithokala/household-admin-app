@@ -12,7 +12,7 @@ import { systemSection } from './system.js';
 /**
  * More: vehicles/homes/people, data status, backup and restore, appearance, system check, account.
  * @param {HTMLElement} main
- * @param {{ signOut: () => Promise<void> }} actions
+ * @param {{ signOut: () => Promise<void>, signOutEverywhere: () => Promise<string|null> }} actions  signOutEverywhere answers why it failed
  */
 export function more(main, actions) {
   const synced = status.lastSynced ? new Date(status.lastSynced) : null;
@@ -43,7 +43,14 @@ export function more(main, actions) {
     el('section', { class: 'card' },
       el('h2', {}, 'Account'),
       el('p', {}, status.user ? `Signed in as ${status.user}.` : 'Signed in.', status.users.length > 1 ? ` App users: ${status.users.join(', ')}.` : ''),
-      el('button', { class: 'button', type: 'button', onclick: actions.signOut }, 'Sign out of this phone')),
+      el('div', { class: 'actions start' },
+        el('button', { class: 'button', type: 'button', onclick: actions.signOut }, 'Sign out of this phone'),
+        // A lost phone: ends this account's sign-in on every device, this one included.
+        el('button', { class: 'button danger', type: 'button', onclick: async () => {
+          if (!window.confirm('Sign out on every device where you are signed in, including this one?')) return;
+          const problem = await actions.signOutEverywhere();
+          if (problem) toast(`Could not sign out all devices: ${problem}`);
+        } }, 'Sign out all devices'))),
     el('p', { class: 'version' }, `Version ${VERSION}`));
 }
 
