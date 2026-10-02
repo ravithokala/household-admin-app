@@ -5,6 +5,7 @@ import { init, session, signOutOfGoogle } from './auth.js';
 import { sessionKey, signOut as endSession } from './api.js';
 import { el, $ } from './dom.js';
 import * as store from './store/store.js';
+import { updatedText } from './store/changes.js';
 import { dashboard } from './views/dashboard.js';
 import { list } from './views/list.js';
 import { itemDetail } from './views/item.js';
@@ -54,15 +55,23 @@ function show() {
   showSyncState();
 }
 
-/** The header badge: offline, changes waiting, or a problem. */
+/**
+ * The header's right: how fresh this phone's copy is ("09:14 ↻", tap to re-read the sheet), and
+ * the badge: offline, or a problem.
+ */
 function showSyncState() {
+  const updated = updatedText(store.status, Date.now());
+  $('updated').textContent = updated.short;
+  $('refresh').setAttribute('aria-label', updated.label);
+  $('refresh').title = updated.label;
+  $('refresh').hidden = false;
   const badge = $('sync');
   const s = store.status;
-  const text = !s.online ? 'Offline · view only' : s.error ? 'Not updated' : '';
+  const text = !s.online ? 'Offline' : s.error ? 'Not updated' : '';
   badge.textContent = text;
   badge.hidden = text === '';
   badge.className = `badge ${!s.online ? 'offline' : s.error ? 'problem' : 'busy'}`;
-  badge.title = s.error ?? '';
+  badge.title = !s.online ? 'Offline · view only: saving needs a connection' : s.error ?? '';
 }
 
 async function signOut() {
@@ -93,6 +102,8 @@ async function start() {
   $('tabs').replaceChildren(...TABS.map(([id, label]) => el('a', { href: `#/${id}`, 'data-tab': id }, label)));
   $('add').addEventListener('click', () => templatePicker());
   $('sync').addEventListener('click', () => { window.location.hash = '#/more'; });
+  // Tapping the time and ↻ re-reads the sheet now (reads only).
+  $('refresh').addEventListener('click', () => { if (signedIn) store.refresh().catch(() => { /* shown in the header */ }); });
   window.addEventListener('hashchange', () => { show(); window.scrollTo(0, 0); });
   store.onChange(() => show());
 

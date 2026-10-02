@@ -38,7 +38,11 @@ a { color: var(--accent); }
 header { position: sticky; top: 0; z-index: 3; background: var(--bg); border-bottom: 1px solid var(--line); padding: env(safe-area-inset-top) 16px 0; }
 .top { display: flex; align-items: center; gap: 10px; min-height: 52px; max-width: 760px; margin: 0 auto; }
 .brand-mark { width: 26px; height: 26px; border-radius: 7px; background: url(icons/icon.svg) center / cover; flex: none; }
-.app-name { font-weight: 700; font-size: 17px; flex: 1; white-space: nowrap; }
+.app-name { font-weight: 700; font-size: 17px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Top right: when this phone's copy last came from the sheet, and ↻ to re-read it now (as the portfolio app). */
+.refresh { flex: none; display: flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; justify-content: flex-end; background: none; border: 0; padding: 0;
+  color: var(--muted); font-size: 13px; white-space: nowrap; cursor: pointer; }
+.refresh span[aria-hidden] { font-size: 20px; line-height: 1; color: var(--accent); }
 .badge { border: 0; border-radius: 12px; padding: 4px 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .badge.offline { background: var(--soft); color: var(--muted); }
 .badge.problem { background: var(--bad-bg); color: var(--bad); }
