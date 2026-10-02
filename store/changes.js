@@ -150,21 +150,3 @@ export function filterItems(data, filters) {
     return words.every((w) => text.includes(w));
   }));
 }
-
-/**
- * The header's top right (as the portfolio app): when this phone's copy last came from the sheet,
- * in London time, with the day too when that was not today. `short` is what shows beside ↻;
- * `label` is the whole sentence, for screen readers.
- * @param {{ lastSynced: number|null, refreshing: boolean, online: boolean }} status
- * @param {number} now
- * @returns {{ short: string, label: string }}
- */
-export function updatedText(status, now) {
-  if (status.refreshing) return { short: 'Updating…', label: 'Updating from the sheet' };
-  const action = status.online ? 'tap to refresh' : 'offline';
-  if (status.lastSynced === null) return { short: 'Not updated', label: `Not updated yet · ${action}` };
-  const day = (/** @type {number} */ ms) => new Date(ms).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: '2-digit', year: 'numeric' });
-  const time = new Date(status.lastSynced).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
-  const today = day(status.lastSynced) === day(now);
-  return { short: today ? time : `${day(status.lastSynced).slice(0, 5)} ${time}`, label: `Updated ${today ? time : `${day(status.lastSynced)} ${time}`} · ${action}` };
-}

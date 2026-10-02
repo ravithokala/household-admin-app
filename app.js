@@ -5,7 +5,7 @@ import { init, session, signOutOfGoogle } from './auth.js';
 import { sessionKey, signOut as endSession, signOutEverywhere as endEverySession } from './api.js';
 import { el, $ } from './dom.js';
 import * as store from './store/store.js';
-import { updatedText } from './store/changes.js';
+import { updatedText } from './freshness.js';
 import { VERSION } from './version.js';
 import { watchForUpdates } from './update.js';
 import { dashboard } from './views/dashboard.js';
