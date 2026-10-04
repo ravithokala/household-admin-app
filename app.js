@@ -9,6 +9,7 @@ import { updatedText } from './freshness.js';
 import { VERSION } from './version.js';
 import { watchForUpdates } from './update.js';
 import { inFrame, FRAMED_MESSAGE } from './guard.js';
+import { watchInstall } from './install.js';
 import { onSessionEnded } from './api.js';
 import { dashboard } from './views/dashboard.js';
 import { list } from './views/list.js';
@@ -115,6 +116,8 @@ function showError(message) {
 async function start() {
   // GitHub Pages cannot forbid framing: refuse to run inside another page (app-kit's guard.js).
   if (inFrame()) { showError(FRAMED_MESSAGE); return; }
+  // Chrome offers to install once, early: listen before anything else (ADR-019, app-kit's install.js).
+  watchInstall();
   // When the server ends this phone's session (expired, "sign out all devices" elsewhere, or the account
   // no longer allowed), the saved copy goes too, and the app starts again at sign-in (ADR-018).
   onSessionEnded(async () => { await store.forget(); window.location.reload(); });

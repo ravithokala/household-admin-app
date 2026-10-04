@@ -9,6 +9,7 @@ import { busy } from './fields.js';
 import { applyTheme, savedTheme } from '../theme.js';
 import { systemSection } from './system.js';
 import { loadTimeText } from '../freshness.js';
+import { installSection } from './install.js';
 
 /**
  * More: vehicles/homes/people, data status, backup and restore, appearance, system check, account.
@@ -52,6 +53,8 @@ export function more(main, actions) {
           const problem = await actions.signOutEverywhere();
           if (problem) toast(`Could not sign out all devices: ${problem}`);
         } }, 'Sign out all devices'))),
+    // At the bottom, out of the way: needed once per phone (RT, 2026-10-04).
+    installSection(),
     // Where a slow open spends its time (as the other two apps): the last refresh from the sheet.
     el('p', { class: 'version' }, `Version ${VERSION}`, status.timing ? el('span', { class: 'load-time' }, loadTimeText(status.timing)) : ''));
 }

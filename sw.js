@@ -10,13 +10,13 @@
  * - SHELL: every file of the app (tests/pwa.test.js checks it).
  * - LEGACY: the names this app's saved copies had before they were named by its path.
  */
-const VERSION = 'shell-3ed0b2d-e6830f174ab7';
-const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'request.js', 'auth.js', 'update.js', 'freshness.js', 'guard.js', 'checks.js', 'config.js', 'dom.js', 'theme.js', 'theme-boot.js', 'version.js', 'styles.css',
+const VERSION = 'shell-e83c1b9-31e0ea4a9684';
+const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'request.js', 'auth.js', 'update.js', 'freshness.js', 'guard.js', 'checks.js', 'install.js', 'config.js', 'dom.js', 'theme.js', 'theme-boot.js', 'version.js', 'styles.css',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'shared/dates.js', 'shared/model.js', 'shared/templates.js', 'shared/sensitive.js', 'shared/validation.js', 'shared/renewals.js',
   'store/db.js', 'store/changes.js', 'store/store.js',
   'views/sheet.js', 'views/fields.js', 'views/parts.js', 'views/dashboard.js', 'views/list.js', 'views/item.js', 'views/itemForm.js',
-  'views/renew.js', 'views/entities.js', 'views/more.js', 'views/chart.js', 'views/system.js'];
+  'views/renew.js', 'views/entities.js', 'views/more.js', 'views/chart.js', 'views/system.js', 'views/install.js'];
 const LEGACY = /^shell-v\d+$/;
 
 // ---- Below this line: app-kit/pwa/sw-core.js. GENERATED: change it in ../app-kit, then run "node ../app-kit/sync.js" in this app. ----
