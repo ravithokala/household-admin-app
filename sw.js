@@ -10,7 +10,7 @@
  * - SHELL: every file of the app (tests/pwa.test.js checks it).
  * - LEGACY: the names this app's saved copies had before they were named by its path.
  */
-const VERSION = 'shell-e83c1b9-31e0ea4a9684';
+const VERSION = 'shell-e6c765d-e0ae156a23e2';
 const SHELL = ['./', 'index.html', 'app.js', 'api.js', 'request.js', 'auth.js', 'update.js', 'freshness.js', 'guard.js', 'checks.js', 'install.js', 'config.js', 'dom.js', 'theme.js', 'theme-boot.js', 'version.js', 'styles.css',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'shared/dates.js', 'shared/model.js', 'shared/templates.js', 'shared/sensitive.js', 'shared/validation.js', 'shared/renewals.js',
