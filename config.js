@@ -12,7 +12,7 @@ export const CONFIG = Object.freeze({
   /** Prefix of this app's localStorage keys: the three apps share one origin (github.io). */
   storage: 'ha',
   /**
-   * What kind each action is (app-kit's api.js). `reads` only read: they give up after 20 seconds, and
+   * What kind each action is (app-kit's api.js). `reads` only read: they wait 45 seconds and are tried once more, and
    * the saved copy stays on screen. `slow` take long by nature: one try of three minutes. Everything
    * else is a save: an id, 12 seconds, then one automatic retry with the same id (ADR-017).
    */
